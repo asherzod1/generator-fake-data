@@ -96,6 +96,37 @@ function App() {
     };
     const [seedData, setSeedData] = useState({});
 
+
+    function generateError(str, errorCount) {
+        const errorTypes = ['deletion', 'insertion', 'swapping'];
+        let errorString = str;
+
+        for (let i = 0; i < errorCount; i++) {
+            const randomIndex = Math.floor(Math.random() * str.length);
+            const randomErrorType = errorTypes[Math.floor(Math.random() * errorTypes.length)];
+
+            switch (randomErrorType) {
+                case 'deletion':
+                    errorString = errorString.slice(0, randomIndex) + errorString.slice(randomIndex + 1);
+                    break;
+
+                case 'insertion':
+                    const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    const randomChar = alphabet[Math.floor(Math.random() * alphabet.length)];
+                    errorString = errorString.slice(0, randomIndex) + randomChar + errorString.slice(randomIndex);
+                    break;
+
+                case 'swapping':
+                    if (randomIndex < str.length - 1) {
+                        errorString = errorString.slice(0, randomIndex) + errorString[randomIndex + 1] + errorString[randomIndex] + errorString.slice(randomIndex + 2);
+                    }
+                    break;
+            }
+        }
+
+        return errorString;
+    }
+
     const dataGenerator = (region, seed, errorAmount, recordsPerPage) => {
         customFaker.seed(parseInt(seed, 10));
         console.log(customFaker.seed(parseInt(seed, 10)), "AAAAAA")
@@ -110,32 +141,32 @@ function App() {
                 const addressError = Math.random() <= errorAmount;
                 const phoneError = Math.random() <= errorAmount;
 
-                var erroneousName = name;
-                for (let j = 0; j < errorAmount; j++) {
-                    const randomIndex = Math.floor(Math.random() * erroneousName.length);
-                    const randomError = Math.floor(Math.random() * 3);
-
-                    switch (randomError) {
-                        case 0:
-                            erroneousName = erroneousName.substring(0, randomIndex) + erroneousName.substring(randomIndex + 1);
-                            break;
-                        case 1:
-                            const randomCharacter = customFaker.string.alphaNumeric;
-                            erroneousName = erroneousName.substring(0, randomIndex) + randomCharacter + erroneousName.substring(randomIndex);
-                            break;
-                        case 2:
-                            if (randomIndex < erroneousName.length - 1) {
-                                const charArray = erroneousName.split('');
-                                const temp = charArray[randomIndex];
-                                charArray[randomIndex] = charArray[randomIndex + 1];
-                                charArray[randomIndex + 1] = temp;
-                                erroneousName = charArray.join('');
-                            }
-                            break;
-                        default:
-                            break;
-                    }
-                }
+                var erroneousName = generateError(name, errorAmount);
+                // for (let j = 0; j < errorAmount; j++) {
+                //     const randomIndex = Math.floor(Math.random() * erroneousName.length);
+                //     const randomError = Math.floor(Math.random() * 3);
+                //
+                //     switch (randomError) {
+                //         case 0:
+                //             erroneousName = erroneousName.substring(0, randomIndex) + erroneousName.substring(randomIndex + 1);
+                //             break;
+                //         case 1:
+                //             const randomCharacter = customFaker.string.alphaNumeric;
+                //             erroneousName = erroneousName.substring(0, randomIndex) + randomCharacter + erroneousName.substring(randomIndex);
+                //             break;
+                //         case 2:
+                //             if (randomIndex < erroneousName.length - 1) {
+                //                 const charArray = erroneousName.split('');
+                //                 const temp = charArray[randomIndex];
+                //                 charArray[randomIndex] = charArray[randomIndex + 1];
+                //                 charArray[randomIndex + 1] = temp;
+                //                 erroneousName = charArray.join('');
+                //             }
+                //             break;
+                //         default:
+                //             break;
+                //     }
+                // }
 
                 if (addressError) {
                     const addressArray = Array.from(address);
@@ -242,7 +273,7 @@ function App() {
                     <div style={{width: "30%"}}>
                         <h6>Errors per Record:</h6>
                         <Slider onChange={onChangeSlider} value={errorAmount} max={10} min={0} defaultValue={1}
-                                step={0.1}/>
+                                step={0.5}/>
                     </div>
                     <div className="mx-3">
                         <h6>Custom error</h6>
