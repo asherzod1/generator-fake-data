@@ -66,7 +66,9 @@ function App() {
             locale: "FR",
         },
     ]
-
+    const customFaker = new Faker({
+        locale: region === "PL" ? pl : region === "EN" ? en : region === "FR" ? fr : en,
+    });
     const formatPhoneToUS = (phoneNumber) => {
         const cleanPhoneNumber = phoneNumber.replace(/\D/g, '');
         const match = cleanPhoneNumber.match(/^(\d{3})(\d{3})(\d{4})$/);
@@ -92,12 +94,11 @@ function App() {
         }
         return phoneNumber;
     };
+    const [seedData, setSeedData] = useState({});
 
     const dataGenerator = (region, seed, errorAmount, recordsPerPage) => {
-        const customFaker = new Faker({
-            locale: region === "PL" ? pl : region === "EN" ? en : region === "FR" ? fr : en,
-        });
         customFaker.seed(parseInt(seed, 10));
+        console.log(customFaker.seed(parseInt(seed, 10)), "AAAAAA")
         const data = [];
         for (let i = 0; i < recordsPerPage; i++) {
             const randomIdentifier = customFaker.string.uuid();
@@ -106,15 +107,34 @@ function App() {
             let phone = region === "PL" ? formatPhonePolish(customFaker.phone.number()) : region === "EN" ? formatPhoneToUS(customFaker.phone.number()) : region === "FR" ? formatPhoneToFrance(customFaker.phone.number()) : formatPhoneToUS(customFaker.phone.number());
 
             if (errorAmount > 0) {
-                const nameError = Math.random() <= errorAmount;
                 const addressError = Math.random() <= errorAmount;
                 const phoneError = Math.random() <= errorAmount;
 
-                if (nameError) {
-                    const nameArray = Array.from(name);
-                    const errorIndex = Math.floor(Math.random() * nameArray.length);
-                    nameArray.splice(errorIndex, 1);
-                    name = nameArray.join('');
+                var erroneousName = name;
+                for (let j = 0; j < errorAmount; j++) {
+                    const randomIndex = Math.floor(Math.random() * erroneousName.length);
+                    const randomError = Math.floor(Math.random() * 3);
+
+                    switch (randomError) {
+                        case 0:
+                            erroneousName = erroneousName.substring(0, randomIndex) + erroneousName.substring(randomIndex + 1);
+                            break;
+                        case 1:
+                            const randomCharacter = customFaker.string.alphaNumeric;
+                            erroneousName = erroneousName.substring(0, randomIndex) + randomCharacter + erroneousName.substring(randomIndex);
+                            break;
+                        case 2:
+                            if (randomIndex < erroneousName.length - 1) {
+                                const charArray = erroneousName.split('');
+                                const temp = charArray[randomIndex];
+                                charArray[randomIndex] = charArray[randomIndex + 1];
+                                charArray[randomIndex + 1] = temp;
+                                erroneousName = charArray.join('');
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
 
                 if (addressError) {
@@ -131,10 +151,13 @@ function App() {
                     [phoneArray[errorIndex], phoneArray[errorIndex + 1]] = [phoneArray[errorIndex + 1], phoneArray[errorIndex]];
                     phone = phoneArray.join('');
                 }
+                name = erroneousName
             }
-
             data.push({randomIdentifier, name, address, phone});
         }
+        let dataForSeed = {}
+        dataForSeed[String(seed)+String(errorAmount)] = data
+        setSeedData({...seedData, ...dataForSeed})
         return data;
     }
 
@@ -182,8 +205,20 @@ function App() {
     useEffect(()=>{
         setData(dataGenerator(region, seed, errorAmount, 20))
         setGetData(prev=>!prev)
-    }, [region, seed, errorAmount])
+    }, [region, errorAmount])
 
+    useEffect(()=>{
+        console.log("SEED", seed)
+        console.log(seedData, "SEED DATA")
+        if(seedData[String(seed)+String(errorAmount)]){
+            setData(seedData[String(seed)+String(errorAmount)])
+            console.log("SETT DATAAA")
+        }
+        else {
+            console.log("GENERATE DATA")
+            setData(dataGenerator(region, seed, errorAmount, 20))
+        }
+    },[seed])
     return (
         <div>
             <h3 className="text-center mt-3">Fake data generator</h3>
